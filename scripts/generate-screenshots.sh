@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 EVIDENCE_DIR="$SCRIPT_DIR/../evidence"
 SCREENSHOTS_DIR="$EVIDENCE_DIR/screenshots"
 
-GREEN='\033[0;32m'; CYAN='\033[0;36m'; NC='\033[0m'
+GREEN='\033[0;32m'; NC='\033[0m'
 log() { echo -e "${GREEN}[$(date '+%H:%M:%S')]${NC} $*"; }
 
 mkdir -p "$SCREENSHOTS_DIR"
