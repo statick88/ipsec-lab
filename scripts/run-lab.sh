@@ -11,12 +11,25 @@ error() { echo -e "${RED}[$(date '+%H:%M:%S')] ERROR:${NC} $*"; }
 [[ $EUID -ne 0 ]] && { error "Must run as root"; exit 1; }
 
 WIRESHARK_DIR="${WIRESHARK_DIR:-/wireshark_keys}"
-KEYS_HOST="${KEYS_HOST:-/Users/statick/Documents/Master_Cyberseguridad/lab/wireshark_keys}"
 
 # Ensure wireshark directory exists
 mkdir -p "$WIRESHARK_DIR" 2>/dev/null || true
 
-# === CLEANUP ===
+# === CLEANUP TRAP ===
+cleanup() {
+    log "Cleaning up..."
+    pkill -9 charon 2>/dev/null || true
+    pkill -9 starter 2>/dev/null || true
+    ip netns del ns-east 2>/dev/null || true
+    ip netns del ns-west 2>/dev/null || true
+    ip link del veth-east 2>/dev/null || true
+    rm -f /var/run/charon.pid /var/run/starter.charon.pid 2>/dev/null || true
+    rm -f /tmp/charon-east.pid /tmp/charon-west.pid 2>/dev/null || true
+    rm -f /tmp/starter-charon-east.pid /tmp/starter-charon-west.pid 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+# === CLEANUP PREVIOUS ===
 log "Cleaning up previous setup..."
 pkill -9 charon 2>/dev/null || true
 pkill -9 starter 2>/dev/null || true
@@ -66,8 +79,10 @@ fi
 
 # === START STRONGSWAN IN NS-WEST (responder) ===
 log "Starting strongSwan in ns-west (responder)..."
+mkdir -p /var/run/ipsec-ns-west 2>/dev/null || true
 cp /etc/ipsec.d/gw-west/ipsec.conf /etc/ipsec.conf
 cp /etc/ipsec.d/gw-west/ipsec.secrets.stroke /etc/ipsec.secrets
+cp /etc/ipsec.d/strongswan-west.conf /etc/strongswan.conf
 ip netns exec ns-west /usr/sbin/ipsec start --nofork &
 WEST_PID=$!
 sleep 3
@@ -78,8 +93,10 @@ rm -f /var/run/charon.pid /var/run/starter.charon.pid
 
 # === START STRONGSWAN IN NS-EAST (initiator) ===
 log "Starting strongSwan in ns-east (initiator)..."
+mkdir -p /var/run/ipsec-ns-east 2>/dev/null || true
 cp /etc/ipsec.d/gw-east/ipsec.conf /etc/ipsec.conf
 cp /etc/ipsec.d/gw-east/ipsec.secrets.stroke /etc/ipsec.secrets
+cp /etc/ipsec.d/strongswan-east.conf /etc/strongswan.conf
 ip netns exec ns-east /usr/sbin/ipsec start --nofork &
 EAST_PID=$!
 sleep 5
@@ -204,7 +221,6 @@ log "  Gateway: 10.0.0.1 (east) <-> 10.0.0.2 (west)"
 log "  Protected: 10.10.0.1 (east lo) <-> 10.20.0.1 (west lo)"
 log "  IKE:     AES_CBC_256 / HMAC_SHA2_256_128 / MODP_2048"
 log "  ESP:     AES_CBC_256 / HMAC_SHA2_256_128"
-log "  PSK:     StrongSwanLab2024!"
 log ""
 log "  Files:"
 log "    ${WIRESHARK_DIR}/capture.pcap     — packet capture"

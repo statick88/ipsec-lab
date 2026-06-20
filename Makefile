@@ -63,13 +63,13 @@ stop: ## Stop running lab container
 status: ## Show IPsec tunnel status
 	@echo "$(GREEN)=== IPsec Lab Status ===$(NC)"
 	@echo ""
-	@echo "$(YELLOW)--- ns-east ---$(NC)"
-	@docker exec $(CONTAINER_NAME) bash -c 'ipsec statusall' 2>/dev/null || echo "ns-east not running"
+	@echo "$(YELLOW)--- ns-east (initiator) ---$(NC)"
+	@docker exec $(CONTAINER_NAME) bash -c 'ip netns exec ns-east ipsec statusall' 2>/dev/null || echo "ns-east not running"
 	@echo ""
 	@echo "$(YELLOW)--- ns-west charon PID ---$(NC)"
 	@docker exec $(CONTAINER_NAME) bash -c 'cat /tmp/charon-west.pid 2>/dev/null && kill -0 $$(cat /tmp/charon-west.pid) 2>/dev/null && echo " running" || echo " not running"' 2>/dev/null || echo "ns-west not running"
 	@echo ""
-	@echo "$(YELLOW)--- XFRM State ---$(NC)"
+	@echo "$(YELLOW)--- XFRM State (ns-east) ---$(NC)"
 	@docker exec $(CONTAINER_NAME) bash -c 'ip netns exec ns-east ip xfrm state' 2>/dev/null || echo "XFRM not available"
 
 capture: ## Capture encrypted traffic to pcap (with ping)
@@ -88,7 +88,7 @@ validate: ## Validate lab: connectivity + tunnel + XFRM
 	@docker exec $(CONTAINER_NAME) bash -c 'ip netns exec ns-east ping -c 3 10.0.0.2' || echo "FAIL"
 	@echo ""
 	@echo "$(YELLOW)2. Tunnel status...$(NC)"
-	@docker exec $(CONTAINER_NAME) bash -c 'ipsec statusall' || echo "FAIL"
+	@docker exec $(CONTAINER_NAME) bash -c 'ip netns exec ns-east ipsec statusall' || echo "FAIL"
 	@echo ""
 	@echo "$(YELLOW)3. XFRM SAs...$(NC)"
 	@docker exec $(CONTAINER_NAME) bash -c 'ip netns exec ns-east ip xfrm state' || echo "FAIL"
