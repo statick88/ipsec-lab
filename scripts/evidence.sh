@@ -3,7 +3,7 @@
 # Generates academic evidence of tunnel operation
 set -euo pipefail
 
-GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'  # YELLOW used in print_header
+GREEN='\033[0;32m'; CYAN='\033[0;36m'; NC='\033[0m'
 log() { echo -e "${GREEN}[$(date '+%H:%M:%S')]${NC} $*"; }
 header() { echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"; echo -e "${CYAN}  $*${NC}"; echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"; }
 
