@@ -1,0 +1,6 @@
+$ cat /etc/ipsec.secrets
+# strongSwan IPsec secrets file for gw-east (initiator)
+# Pre-Shared Key for IKEv2 authentication
+
+# PSK between gw-east and gw-west
+10.0.0.1 10.0.0.2 : PSK "StrongSwanLab2024!"

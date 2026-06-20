@@ -1,0 +1,26 @@
+$ ip netns exec ns-east ipsec statusall
+Status of IKE charon daemon (strongSwan 5.9.5, Linux 6.8.0-117-generic, aarch64):
+  uptime: 81 seconds, since Jun 20 09:38:54 2026
+  malloc: sbrk 2682880, mmap 0, used 590640, free 2092240
+  worker threads: 11 of 16 idle, 5/0/0/0 working, job queue: 0/0/0/0, scheduled: 3
+  loaded plugins: charon aes rc2 sha2 sha1 md5 mgf1 random nonce x509 revocation constraints pubkey pkcs1 pkcs7 pkcs8 pkcs12 pgp dnskey sshkey pem fips-prf gmp xcbc hmac drbg attr kernel-netlink resolve socket-default forecast farp stroke vici updown eap-identity eap-aka eap-md5 eap-gtc eap-dynamic eap-radius eap-tls eap-ttls eap-peap eap-tnc xauth-generic xauth-eap xauth-pam tnc-tnccs dhcp lookip error-notify certexpire led addrblock unity counters
+Listening IP addresses:
+  10.0.0.1
+Connections:
+gw-east-to-gw-west:  10.0.0.1...10.0.0.2  IKEv2, dpddelay=30s
+gw-east-to-gw-west:   local:  [10.0.0.1] uses pre-shared key authentication
+gw-east-to-gw-west:   remote: [10.0.0.2] uses pre-shared key authentication
+gw-east-to-gw-west:   child:  10.10.0.0/24 === 10.20.0.0/24 TUNNEL, dpdaction=restart
+Security Associations (1 up, 0 connecting):
+gw-east-to-gw-west[1]: ESTABLISHED 81 seconds ago, 10.0.0.1[10.0.0.1]...10.0.0.2[10.0.0.2]
+gw-east-to-gw-west[1]: IKEv2 SPIs: 769f6350673feff9_i* 5e7f9a506b7c2637_r, pre-shared key reauthentication in 7 hours
+gw-east-to-gw-west[1]: IKE proposal: AES_CBC_256/HMAC_SHA2_256_128/PRF_HMAC_SHA2_256/MODP_2048
+gw-east-to-gw-west{1}:  INSTALLED, TUNNEL, reqid 1, ESP SPIs: ccaad0a3_i ceecf4cf_o
+gw-east-to-gw-west{1}:  AES_CBC_256/HMAC_SHA2_256_128, 1260 bytes_i (15 pkts, 37s ago), 1260 bytes_o (15 pkts, 38s ago), rekeying in 44 minutes
+gw-east-to-gw-west{1}:   10.10.0.0/24 === 10.20.0.0/24
+
+$ ip netns exec ns-east ipsec status
+Security Associations (1 up, 0 connecting):
+gw-east-to-gw-west[1]: ESTABLISHED 81 seconds ago, 10.0.0.1[10.0.0.1]...10.0.0.2[10.0.0.2]
+gw-east-to-gw-west{1}:  INSTALLED, TUNNEL, reqid 1, ESP SPIs: ccaad0a3_i ceecf4cf_o
+gw-east-to-gw-west{1}:   10.10.0.0/24 === 10.20.0.0/24

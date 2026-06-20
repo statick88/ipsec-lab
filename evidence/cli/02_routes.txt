@@ -1,0 +1,7 @@
+$ ip netns exec ns-east ip route
+10.0.0.0/30 dev veth-east proto kernel scope link src 10.0.0.1 
+10.20.0.0/24 via 10.0.0.2 dev veth-east 
+
+$ ip netns exec ns-west ip route
+10.0.0.0/30 dev veth-west proto kernel scope link src 10.0.0.2 
+10.10.0.0/24 via 10.0.0.1 dev veth-west 

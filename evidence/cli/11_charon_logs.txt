@@ -1,0 +1,5 @@
+=== ns-west charon log ===
+(not captured)
+
+=== ns-east charon log ===
+(not captured)

@@ -1,0 +1,31 @@
+$ tcpdump -r /wireshark_keys/capture.pcap -nn
+reading from file /wireshark_keys/capture.pcap, link-type EN10MB (Ethernet), snapshot length 262144
+09:39:07.909115 IP 10.0.0.1 > 10.0.0.2: ESP(spi=0xceecf4cf,seq=0x1), length 136
+09:39:07.909171 IP 10.0.0.2 > 10.0.0.1: ESP(spi=0xccaad0a3,seq=0x1), length 136
+09:39:07.909171 IP 10.20.0.1 > 10.10.0.1: ICMP echo reply, id 47018, seq 1, length 64
+09:39:08.939669 IP 10.0.0.1 > 10.0.0.2: ESP(spi=0xceecf4cf,seq=0x2), length 136
+09:39:08.939722 IP 10.0.0.2 > 10.0.0.1: ESP(spi=0xccaad0a3,seq=0x2), length 136
+09:39:08.939722 IP 10.20.0.1 > 10.10.0.1: ICMP echo reply, id 47018, seq 2, length 64
+09:39:09.963614 IP 10.0.0.1 > 10.0.0.2: ESP(spi=0xceecf4cf,seq=0x3), length 136
+09:39:09.963675 IP 10.0.0.2 > 10.0.0.1: ESP(spi=0xccaad0a3,seq=0x3), length 136
+09:39:09.963675 IP 10.20.0.1 > 10.10.0.1: ICMP echo reply, id 47018, seq 3, length 64
+09:39:10.983017 IP 10.0.0.1 > 10.0.0.2: ESP(spi=0xceecf4cf,seq=0x4), length 136
+09:39:10.983077 IP 10.0.0.2 > 10.0.0.1: ESP(spi=0xccaad0a3,seq=0x4), length 136
+09:39:10.983077 IP 10.20.0.1 > 10.10.0.1: ICMP echo reply, id 47018, seq 4, length 64
+09:39:12.011387 IP 10.0.0.1 > 10.0.0.2: ESP(spi=0xceecf4cf,seq=0x5), length 136
+09:39:12.011441 IP 10.0.0.2 > 10.0.0.1: ESP(spi=0xccaad0a3,seq=0x5), length 136
+09:39:12.011441 IP 10.20.0.1 > 10.10.0.1: ICMP echo reply, id 47018, seq 5, length 64
+09:39:12.852285 IP 10.0.0.1 > 10.0.0.2: ESP(spi=0xceecf4cf,seq=0x6), length 136
+09:39:12.852383 IP 10.0.0.2 > 10.0.0.1: ESP(spi=0xccaad0a3,seq=0x6), length 136
+09:39:12.852383 IP 10.20.0.1 > 10.10.0.1: ICMP echo reply, id 47018, seq 6, length 64
+09:39:13.878242 IP 10.0.0.1 > 10.0.0.2: ESP(spi=0xceecf4cf,seq=0x7), length 136
+09:39:13.878300 IP 10.0.0.2 > 10.0.0.1: ESP(spi=0xccaad0a3,seq=0x7), length 136
+09:39:13.878300 IP 10.20.0.1 > 10.10.0.1: ICMP echo reply, id 47018, seq 7, length 64
+09:39:14.904856 IP 10.0.0.1 > 10.0.0.2: ESP(spi=0xceecf4cf,seq=0x8), length 136
+09:39:14.904916 IP 10.0.0.2 > 10.0.0.1: ESP(spi=0xccaad0a3,seq=0x8), length 136
+09:39:14.904916 IP 10.20.0.1 > 10.10.0.1: ICMP echo reply, id 47018, seq 8, length 64
+
+=== Packet count ===
+Total packets: 25
+ESP packets: 16
+ICMP packets: 8

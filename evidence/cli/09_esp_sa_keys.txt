@@ -1,0 +1,21 @@
+$ ip netns exec ns-east ip xfrm state
+src 10.0.0.1 dst 10.0.0.2
+	proto esp spi 0xceecf4cf reqid 1 mode tunnel
+	replay-window 0 flag af-unspec
+	auth-trunc hmac(sha256) 0x358148d89914f18fe880f9c019b610ff774d8d732651b66801ef12878d98d772 128
+	enc cbc(aes) 0x54b1e312e4e44a81786752a12e4f57cf7f6ee6a8ad81ef28264876b2b4787855
+	lastused 2026-06-20 09:40:19
+	anti-replay context: seq 0x0, oseq 0x14, bitmap 0x00000000
+src 10.0.0.2 dst 10.0.0.1
+	proto esp spi 0xccaad0a3 reqid 1 mode tunnel
+	replay-window 32 flag af-unspec
+	auth-trunc hmac(sha256) 0xba8d650b0e3cb60cd20c0ccda315734e363a564e9e742b0dfba89b89023f449b 128
+	enc cbc(aes) 0xa229a6eb9a6962fc42a2eb09b43c3a62e610ec1caf153daf221eae0a5b9185a2
+	lastused 2026-06-20 09:40:19
+	anti-replay context: seq 0x14, oseq 0x0, bitmap 0x000fffff
+
+=== esp_sa file (Wireshark CSV format) ===
+"IPv4","10.0.0.1","10.0.0.2","0xceecf4cf","AES-CBC [RFC3602]","0x54b1e312e4e44a81786752a12e4f57cf7f6ee6a8ad81ef28264876b2b4787855","HMAC-SHA-256-128 [RFC4868]","0x358148d89914f18fe880f9c019b610ff774d8d732651b66801ef12878d98d772"
+"IPv4","10.0.0.2","10.0.0.1","0xccaad0a3","AES-CBC [RFC3602]","0xa229a6eb9a6962fc42a2eb09b43c3a62e610ec1caf153daf221eae0a5b9185a2","HMAC-SHA-256-128 [RFC4868]","0xba8d650b0e3cb60cd20c0ccda315734e363a564e9e742b0dfba89b89023f449b"
+"IPv4","10.0.0.2","10.0.0.1","0xccaad0a3","AES-CBC [RFC3602]","0xa229a6eb9a6962fc42a2eb09b43c3a62e610ec1caf153daf221eae0a5b9185a2","HMAC-SHA-256-128 [RFC4868]","0xba8d650b0e3cb60cd20c0ccda315734e363a564e9e742b0dfba89b89023f449b"
+"IPv4","10.0.0.1","10.0.0.2","0xceecf4cf","AES-CBC [RFC3602]","0x54b1e312e4e44a81786752a12e4f57cf7f6ee6a8ad81ef28264876b2b4787855","HMAC-SHA-256-128 [RFC4868]","0x358148d89914f18fe880f9c019b610ff774d8d732651b66801ef12878d98d772"

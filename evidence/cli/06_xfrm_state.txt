@@ -1,0 +1,61 @@
+$ ip netns exec ns-east ip xfrm state
+src 10.0.0.1 dst 10.0.0.2
+	proto esp spi 0xceecf4cf reqid 1 mode tunnel
+	replay-window 0 flag af-unspec
+	auth-trunc hmac(sha256) 0x358148d89914f18fe880f9c019b610ff774d8d732651b66801ef12878d98d772 128
+	enc cbc(aes) 0x54b1e312e4e44a81786752a12e4f57cf7f6ee6a8ad81ef28264876b2b4787855
+	lastused 2026-06-20 09:39:37
+	anti-replay context: seq 0x0, oseq 0xf, bitmap 0x00000000
+src 10.0.0.2 dst 10.0.0.1
+	proto esp spi 0xccaad0a3 reqid 1 mode tunnel
+	replay-window 32 flag af-unspec
+	auth-trunc hmac(sha256) 0xba8d650b0e3cb60cd20c0ccda315734e363a564e9e742b0dfba89b89023f449b 128
+	enc cbc(aes) 0xa229a6eb9a6962fc42a2eb09b43c3a62e610ec1caf153daf221eae0a5b9185a2
+	lastused 2026-06-20 09:39:37
+	anti-replay context: seq 0xf, oseq 0x0, bitmap 0x00007fff
+
+$ ip netns exec ns-east ip xfrm policy
+src 10.10.0.0/24 dst 10.20.0.0/24 
+	dir out priority 375423 
+	tmpl src 10.0.0.1 dst 10.0.0.2
+		proto esp spi 0xceecf4cf reqid 1 mode tunnel
+src 10.20.0.0/24 dst 10.10.0.0/24 
+	dir fwd priority 375423 
+	tmpl src 10.0.0.2 dst 10.0.0.1
+		proto esp reqid 1 mode tunnel
+src 10.20.0.0/24 dst 10.10.0.0/24 
+	dir in priority 375423 
+	tmpl src 10.0.0.2 dst 10.0.0.1
+		proto esp reqid 1 mode tunnel
+src 0.0.0.0/0 dst 0.0.0.0/0 
+	socket in priority 0 
+src 0.0.0.0/0 dst 0.0.0.0/0 
+	socket out priority 0 
+src 0.0.0.0/0 dst 0.0.0.0/0 
+	socket in priority 0 
+src 0.0.0.0/0 dst 0.0.0.0/0 
+	socket out priority 0 
+src ::/0 dst ::/0 
+	socket in priority 0 
+src ::/0 dst ::/0 
+	socket out priority 0 
+src ::/0 dst ::/0 
+	socket in priority 0 
+src ::/0 dst ::/0 
+	socket out priority 0 
+
+$ ip netns exec ns-west ip xfrm state
+src 10.0.0.2 dst 10.0.0.1
+	proto esp spi 0xccaad0a3 reqid 1 mode tunnel
+	replay-window 0 flag af-unspec
+	auth-trunc hmac(sha256) 0xba8d650b0e3cb60cd20c0ccda315734e363a564e9e742b0dfba89b89023f449b 128
+	enc cbc(aes) 0xa229a6eb9a6962fc42a2eb09b43c3a62e610ec1caf153daf221eae0a5b9185a2
+	lastused 2026-06-20 09:39:37
+	anti-replay context: seq 0x0, oseq 0xf, bitmap 0x00000000
+src 10.0.0.1 dst 10.0.0.2
+	proto esp spi 0xceecf4cf reqid 1 mode tunnel
+	replay-window 32 flag af-unspec
+	auth-trunc hmac(sha256) 0x358148d89914f18fe880f9c019b610ff774d8d732651b66801ef12878d98d772 128
+	enc cbc(aes) 0x54b1e312e4e44a81786752a12e4f57cf7f6ee6a8ad81ef28264876b2b4787855
+	lastused 2026-06-20 09:39:37
+	anti-replay context: seq 0xf, oseq 0x0, bitmap 0x00007fff
