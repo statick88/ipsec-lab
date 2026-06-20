@@ -1,0 +1,4 @@
+ignored:
+  - DL3008  # Pin versions in apt-get - impractical for this lab
+  - DL3015  # Avoid additional packages - not needed for lab
+  - DL3009  # Delete apt-get lists after installing - done in same RUN
