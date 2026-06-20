@@ -90,7 +90,7 @@ Un solo comando. Sin configuración manual. Sin scripts externos.
 | strongSwan | 5.9.5 | apt (official) |
 | Docker | Colima VZ/VirtioFS | Apple Silicon |
 | CI/CD | GitHub Actions | 6 stages |
-| Tests | BATS | 28 tests |
+| Tests | BATS | 42 tests |
 | Linting | ShellCheck + Hadolint | Static analysis |
 | Security | Trivy + Dockle | CVE + best practices |
 
@@ -252,7 +252,7 @@ Lint ──► Security ──► Build ──► Unit Tests ──► E2E Tests
  │          │          │           │              │           │        │
  │          │          │           │              │           │        └─ Docker Hub
  │          │          │           │              │           └─ Dockle + Trivy
- │          │          │           │              └─ BATS (15 tests)
+ │          │          │           │              └─ BATS (14 tests)
  │          │          │           └─ BATS (13 tests)
  │          │          └─ Docker Buildx + cache
  │          └─ Trivy filesystem

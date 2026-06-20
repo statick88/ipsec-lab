@@ -116,6 +116,8 @@ jobs:
           push: false
           load: true
           tags: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Dockle scan
         uses: goodwithtech/dockle-action@main
@@ -147,6 +149,8 @@ jobs:
           push: false
           load: true
           tags: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Install BATS
         run: |
@@ -178,6 +182,8 @@ jobs:
           push: false
           load: true
           tags: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Trivy vulnerability scanner (image)
         uses: aquasecurity/trivy-action@master

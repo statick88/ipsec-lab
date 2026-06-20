@@ -3,7 +3,7 @@
 
 services:
   ipsec-lab:
-    image: ipsec-lab:latest
+    image: statick/ipsec-lab:latest
     container_name: ipsec-lab
     privileged: true
     network_mode: host
