@@ -1,4 +1,4 @@
-<![CDATA[<div align="center">
+<div align="center">
 
 # IPsec Tunnel Lab
 
@@ -351,4 +351,3 @@ colima start --cpu 4 --memory 8
 *"El código no miente. Los logs no mienten. La evidencia CLI no miente."*
 
 </div>
-]]>
