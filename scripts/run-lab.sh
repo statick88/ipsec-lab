@@ -66,8 +66,8 @@ fi
 
 # === START STRONGSWAN IN NS-WEST (responder) ===
 log "Starting strongSwan in ns-west (responder)..."
-cp /etc/ipsec.conf.west /etc/ipsec.conf
-cp /etc/ipsec.secrets.west /etc/ipsec.secrets
+cp /etc/ipsec.d/gw-west/ipsec.conf /etc/ipsec.conf
+cp /etc/ipsec.d/gw-west/ipsec.secrets.stroke /etc/ipsec.secrets
 ip netns exec ns-west /usr/sbin/ipsec start --nofork &
 WEST_PID=$!
 sleep 3
@@ -78,8 +78,8 @@ rm -f /var/run/charon.pid /var/run/starter.charon.pid
 
 # === START STRONGSWAN IN NS-EAST (initiator) ===
 log "Starting strongSwan in ns-east (initiator)..."
-cp /etc/ipsec.conf.east /etc/ipsec.conf
-cp /etc/ipsec.secrets.east /etc/ipsec.secrets
+cp /etc/ipsec.d/gw-east/ipsec.conf /etc/ipsec.conf
+cp /etc/ipsec.d/gw-east/ipsec.secrets.stroke /etc/ipsec.secrets
 ip netns exec ns-east /usr/sbin/ipsec start --nofork &
 EAST_PID=$!
 sleep 5
