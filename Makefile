@@ -16,7 +16,7 @@ YELLOW = \033[1;33m
 CYAN = \033[0;36m
 NC = \033[0m
 
-.PHONY: help build run run-bg stop status capture validate evidence \
+.PHONY: help build run run-bg stop status capture validate evidence zero-trust-audit \
         test test-unit test-e2e test-security test-all \
         lint lint-docker lint-shell lint-all \
         security-scan scan trivy \
@@ -107,6 +107,10 @@ screenshots: ## Generate PNG screenshots from HTML evidence
 	@echo "$(GREEN)Generating screenshots...$(NC)"
 	@bash scripts/generate-screenshots.sh
 	@echo "$(GREEN)Open evidence/index.html to view$(NC)"
+
+zero-trust-audit: ## Run Zero Trust audit (identity, segmentation, verification)
+	@echo "$(GREEN)Running Zero Trust audit...$(NC)"
+	@bash scripts/zero-trust-audit.sh $(CONTAINER_NAME)
 
 # =============================================================================
 # TESTS

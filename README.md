@@ -210,6 +210,78 @@ python3 scripts/generate-pdf-report.py           # PDF con outputs reales
 
 ---
 
+## Zero Trust Architecture
+
+Este lab implementa los principios de **Zero Trust** (NIST SP 800-207) en un entorno IPsec:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    ZERO TRUST PRINCIPLES                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  1. VERIFY EXPLICITLY     2. LEAST PRIVILEGE                        │
+│     ├─ X.509 CA            ├─ Namespaces aislados                   │
+│     ├─ Certificados        ├─ Subredes protegidas por SA            │
+│     └─ PSK + Cert hybrid   └─ Acceso mínimo necesario               │
+│                                                                     │
+│  3. ASSUME BREACH         4. CONTINUOUS VERIFICATION                │
+│     ├─ Charon audit log    ├─ DPD cada 10s                         │
+│     ├─ XFRM state monitor  ├─ Rekeying cada 1h                     │
+│     └─ Wireshark decrypt   └─ Monitoreo continuo                    │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Identity Verification (X.509)
+
+```bash
+# Generar certificados (se ejecuta automáticamente con make run)
+pki --gen --type rsa --size 2048 > ca.key
+pki --self --ca --in ca.key --dn "CN=ZeroTrust Lab CA" > ca.crt
+pki --issue --ca ca.crt --ca-key ca.key --dn "CN=gw-east" --san="10.0.0.1" > gw-east.crt
+pki --issue --ca ca.crt --ca-key ca.key --dn "CN=gw-west" --san="10.0.0.2" > gw-west.crt
+```
+
+### Continuous Verification (DPD)
+
+| Parameter | Value | Purpose |
+|-----------|-------|---------|
+| `dpddelay` | 10s | Verificar peer cada 10 segundos |
+| `dpdtimeout` | 30s | Timeout rápido — fallar rápido |
+| `dpdaction` | restart | Re-verificar si peer no responde |
+| `lifetime` | 3600s | Rekeying cada 1h (perfect forward secrecy) |
+
+### Audit Trail (Charon Logging)
+
+```bash
+# Logs configurados en strongswan.conf
+charondebug="ike 2, knl 2, cfg 2, net 2"
+filelog {
+    /tmp/charon-east.log { ... }
+    /tmp/charon-west.log { ... }
+}
+```
+
+### Zero Trust Audit
+
+```bash
+# Ejecutar auditoría completa
+make zero-trust-audit
+
+# O directamente
+bash scripts/zero-trust-audit.sh
+```
+
+Audit verifica:
+- **Identity**: CA + certificados X.509 válidos
+- **Micro-segmentation**: Namespaces aislados
+- **Continuous verification**: DPD configurado agresivamente
+- **Tunnel status**: IKEv2 + ESP establecidos
+- **Audit logging**: Charon logs activos
+- **XFRM**: Security Associations bidireccionales
+
+---
+
 ## Makefile
 
 | Comando | Qué hace |

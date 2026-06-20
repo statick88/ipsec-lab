@@ -71,6 +71,55 @@ ip netns exec ns-west ip route add 10.10.0.0/24 via 10.0.0.1 dev veth-west 2>/de
 ip netns exec ns-east ip addr add 10.10.0.1/24 dev lo 2>/dev/null || true
 ip netns exec ns-west ip addr add 10.20.0.1/24 dev lo 2>/dev/null || true
 
+# === ZERO TRUST: GENERATE X.509 CERTIFICATES ===
+log "Generating X.509 CA and gateway certificates (Zero Trust)..."
+
+CERT_DIR="/tmp/zero-trust-certs"
+mkdir -p "$CERT_DIR"
+
+# Generate CA key and certificate
+pki --gen --type rsa --size 2048 --outform pem > "$CERT_DIR/ca.key" 2>/dev/null
+pki --self --ca --lifetime 3650 --in "$CERT_DIR/ca.key" \
+    --dn "CN=ZeroTrust Lab CA,O=IPsec Lab,C=ES" \
+    --outform pem > "$CERT_DIR/ca.crt" 2>/dev/null
+
+# Generate gw-east key and certificate
+pki --gen --type rsa --size 2048 --outform pem > "$CERT_DIR/gw-east.key" 2>/dev/null
+pki --issue --lifetime 3650 --ca "$CERT_DIR/ca.crt" --ca-key "$CERT_DIR/ca.key" \
+    --in "$CERT_DIR/gw-east.key" \
+    --dn "CN=gw-east,O=IPsec Lab,C=ES" \
+    --san="10.0.0.1" --san="dns:gw-east" \
+    --flag ikeIntermediate --outform pem > "$CERT_DIR/gw-east.crt" 2>/dev/null
+
+# Generate gw-west key and certificate
+pki --gen --type rsa --size 2048 --outform pem > "$CERT_DIR/gw-west.key" 2>/dev/null
+pki --issue --lifetime 3650 --ca "$CERT_DIR/ca.crt" --ca-key "$CERT_DIR/ca.key" \
+    --in "$CERT_DIR/gw-west.key" \
+    --dn "CN=gw-west,O=IPsec Lab,C=ES" \
+    --san="10.0.0.2" --san="dns:gw-west" \
+    --flag ikeIntermediate --outform pem > "$CERT_DIR/gw-west.crt" 2>/dev/null
+
+# Convert to DER for strongSwan
+pki --pub --in "$CERT_DIR/gw-east.key" | \
+    pki --issue --lifetime 3650 --ca "$CERT_DIR/ca.crt" --ca-key "$CERT_DIR/ca.key" \
+    --dn "CN=gw-east,O=IPsec Lab,C=ES" \
+    --san="10.0.0.1" --san="dns:gw-east" \
+    --flag ikeIntermediate --outform pem > "$CERT_DIR/gw-east.crt" 2>/dev/null
+
+pki --pub --in "$CERT_DIR/gw-west.key" | \
+    pki --issue --lifetime 3650 --ca "$CERT_DIR/ca.crt" --ca-key "$CERT_DIR/ca.key" \
+    --dn "CN=gw-west,O=IPsec Lab,C=ES" \
+    --san="10.0.0.2" --san="dns:gw-west" \
+    --flag ikeIntermediate --outform pem > "$CERT_DIR/gw-west.crt" 2>/dev/null
+
+# Copy certs to Wireshark keys for evidence
+cp "$CERT_DIR/ca.crt" "$CERT_DIR"/*.crt "$CERT_DIR"/*.key "$WIRESHARK_DIR/" 2>/dev/null || true
+
+log "Zero Trust certificates generated:"
+log "  CA:     $CERT_DIR/ca.crt"
+log "  East:   $CERT_DIR/gw-east.crt"
+log "  West:   $CERT_DIR/gw-west.crt"
+
 # === TEST CONNECTIVITY ===
 log "Testing connectivity..."
 if ip netns exec ns-east ping -c 2 10.0.0.2 >/dev/null 2>&1; then
