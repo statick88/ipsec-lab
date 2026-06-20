@@ -1,253 +1,340 @@
-# IPsec Tunnel Lab — strongSwan/Docker
+<![CDATA[<div align="center">
 
-[![CI/CD](https://github.com/statick/ipsec-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/statick/ipsec-lab/actions/workflows/ci.yml)
-[![Docker](https://img.shields.io/badge/docker-statick%2Fipsec--lab-blue)](https://hub.docker.com/r/statick/ipsec-lab)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+# 🔐 IPsec Tunnel Lab
 
-Laboratorio práctico de configuración de túneles IPsec IKEv2/ESP con strongSwan en Docker usando Network Namespaces.
+### IKEv2/ESP Tunnel with strongSwan on Docker
 
-## Objetivos
+[![CI/CD](https://github.com/statick88/ipsec-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/statick88/ipsec-lab/actions/workflows/ci.yml)
+[![Docker Image](https://img.shields.io/docker/image-size/statick/ipsec-lab?sort=semver&label=docker)](https://hub.docker.com/r/statick/ipsec-lab)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![strongSwan](https://img.shields.io/badge/strongSwan-5.9.5-green.svg)](https://docs.strongswan.org)
+[![Platform](https://img.shields.io/badge/platform-Docker%20%7C%20Linux-lightgrey.svg)]()
 
-Al finalizar este laboratorio, serás capaz de:
+**Practical lab demonstrating IPsec IKEv2/ESP tunnel establishment, ESP traffic encryption,
+and Wireshark packet decryption using strongSwan network namespaces.**
 
-- Configurar strongSwan como implementación IPsec en Linux
-- Crear dos extremos de comunicación usando Network Namespaces
-- Establecer un túnel IPsec IKEv2 con autenticación PSK
-- Capturar y analizar tráfico ESP cifrado con Wireshark
+[Quick Start](#-quick-start) · [Architecture](#-architecture) · [Wireshark](#-wireshark-decryption) · [Docker Hub](https://hub.docker.com/r/statick/ipsec-lab) · [Report (PDF)](evidence/IPsec_Lab_Informe.pdf)
 
-## Prerrequisitos
+</div>
 
-- **Colima** ejecutándose (VZ/VirtioFS en Apple Silicon)
-- **Docker** (vía Colima)
-- **make** (opcional)
+---
 
-```bash
-colima status
-# Debe mostrar: runtime: docker, mountType: virtiofs
+## Overview
+
+This lab builds a **complete IPsec VPN** inside a single Docker container using Linux network namespaces to simulate two independent gateways connected by a veth pair. The tunnel encrypts all traffic between protected subnets using **AES-CBC-256** (cipher) and **HMAC-SHA-256-128** (integrity).
+
+```
+                    ┌─────────────────────────────────────────────┐
+                    │           Docker Container (privileged)     │
+                    │                                             │
+                    │   ┌──────────────┐    ┌──────────────┐     │
+  10.10.0.1/24 ────┤   │   ns-east     │    │   ns-west     │   ├──── 10.20.0.1/24
+  (protected)      │   │   10.0.0.1    │────│   10.0.0.2    │   │      (protected)
+                    │   │   charon      │ ESP│   charon      │   │
+                    │   │   (initiator) │◄═══│   (responder) │   │
+                    │   └──────────────┘    └──────────────┘     │
+                    │         veth-east ◄──► veth-west           │
+                    │              10.0.0.0/30                    │
+                    └─────────────────────────────────────────────┘
 ```
 
-## Inicio Rápido
+### What You'll Learn
+
+| Skill | Description |
+|-------|-------------|
+| **IKEv2 Configuration** | strongSwan ipsec.conf with PSK authentication |
+| **ESP Encryption** | AES-CBC-256 tunnel mode between gateways |
+| **XFRM State** | Linux kernel IPsec SA management |
+| **Wireshark Decryption** | esp_sa CSV format for ESP packet decoding |
+| **Network Namespaces** | Isolated network environments in Docker |
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- [Colima](https://github.com/abiosoft/colima) running (`colima status` → runtime: docker)
+- Docker available (`docker ps`)
+- Make (optional)
+
+### One Command
 
 ```bash
-# Ejecutar lab completo
 make run-bg
+```
 
-# Verificar túnel
-make status
+This will:
+1. Build the Docker image (Ubuntu 22.04 + strongSwan 5.9.5)
+2. Create two network namespaces (ns-east, ns-west)
+3. Establish IKEv2 tunnel automatically
+4. Generate ESP traffic and capture packets
+5. Export Wireshark decryption keys
 
-# Validar todo
-make validate
+### Verify
 
-# Generar evidencias
-make evidence
+```bash
+make status        # Check SA status
+make validate      # Full validation (connectivity + tunnel + XFRM)
+```
 
-# Detener
+### Decrypt in Wireshark
+
+```bash
+wireshark wireshark_keys/capture.pcap
+# Edit → Preferences → Protocols → ESP
+# Load: wireshark_keys/esp_sa
+```
+
+### Stop
+
+```bash
 make stop
 ```
 
-## Comandos Make
+---
 
-| Comando | Descripción |
-|---------|-------------|
-| `make help` | Mostrar ayuda |
-| `make build` | Construir imagen Docker |
-| `make run` | Ejecutar lab (interactivo) |
-| `make run-bg` | Ejecutar lab en background |
-| `make stop` | Detener lab |
-| `make status` | Ver estado del túnel |
-| `make capture` | Capturar tráfico ESP |
-| `make validate` | Validar: conectividad + túnel + XFRM |
-| `make evidence` | Generar documentos de evidencia |
-| `make test` | Ejecutar tests unitarios |
-| `make test-e2e` | Ejecutar tests E2E |
-| `make test-security` | Ejecutar tests de seguridad |
-| `make test-all` | Ejecutar todos los tests |
-| `make lint` | Lintear Dockerfile + scripts |
-| `make trivy` | Escaneo de vulnerabilidades |
-| `make push` | Subir a Docker Hub |
-| `make clean` | Limpiar contenedores |
+## Architecture
 
-## Arquitectura
+### Network Topology
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│  Docker Container (privileged, --network host)                   │
-│  ├── Namespace ns-east (10.0.0.1/30)                            │
-│  │   ├── veth-east ←→ veth-west                                 │
-│  │   ├── strongSwan charon (initiator, IKEv2)                   │
-│  │   └── IP: 10.10.0.1/24 (lo) ← subred protegida             │
-│  │                                                                │
-│  └── Namespace ns-west (10.0.0.2/30)                            │
-│      ├── veth-west ←→ veth-east                                 │
-│      ├── strongSwan charon (responder, IKEv2)                   │
-│      └── IP: 10.20.0.1/24 (lo) ← subred protegida             │
-│                                                                   │
-│  wireshark_keys/                                                 │
-│  ├── capture.pcap    — paquetes ESP capturados                  │
-│  └── esp_sa          — claves ESP para Wireshark                │
-└──────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Network Namespace: ns-east                        │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │ lo: 10.10.0.1/24 (protected subnet)                        │   │
+│  │ veth-east: 10.0.0.1/30 (transit link)                      │   │
+│  │ charon: IKEv2 initiator, PSK "StrongSwanLab2024!"          │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                              │                                      │
+│                         veth-east                                   │
+│                              │                                      │
+│                         veth-west                                   │
+│                              │                                      │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │ lo: 10.20.0.1/24 (protected subnet)                        │   │
+│  │ veth-west: 10.0.0.2/30 (transit link)                      │   │
+│  │ charon: IKEv2 responder, PSK "StrongSwanLab2024!"          │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                    Network Namespace: ns-west                        │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Configuración IPsec
+### IPsec Parameters
 
-| Parámetro | Valor |
-|-----------|-------|
-| Protocolo | IKEv2 (UDP 500/4500) |
-| Cifrado IKE | AES_CBC_256 |
-| HMAC IKE | HMAC_SHA2_256_128 |
-| DH Group | MODP_2048 (Group 14) |
-| Cifrado ESP | AES_CBC_256 |
-| HMAC ESP | HMAC_SHA2_256_128 |
-| Autenticación | PSK: `StrongSwanLab2024!` |
-| Túnel | 10.10.0.0/24 ↔ 10.20.0.0/24 |
+| Phase | Parameter | Value | RFC |
+|-------|-----------|-------|-----|
+| **IKE (Phase 1)** | Cipher | AES_CBC_256 | [RFC 3602](https://tools.ietf.org/html/rfc3602) |
+| | Integrity | HMAC_SHA2_256_128 | [RFC 4868](https://tools.ietf.org/html/rfc4868) |
+| | PRF | PRF_HMAC_SHA2_256 | [RFC 7296](https://tools.ietf.org/html/rfc7296) |
+| | DH Group | MODP_2048 (Group 14) | [RFC 3526](https://tools.ietf.org/html/rfc3526) |
+| | Lifetime | 28800s | Default |
+| **ESP (Phase 2)** | Protocol | ESP (IP Protocol 50) | [RFC 4303](https://tools.ietf.org/html/rfc4303) |
+| | Cipher | AES_CBC_256 | RFC 3602 |
+| | Integrity | HMAC_SHA2_256_128 | RFC 4868 |
+| | Mode | Tunnel | RFC 4303 |
+| **Auth** | Method | PSK | — |
+| | Key | `StrongSwanLab2024!` | — |
 
-## Tests
+---
 
-### Unit/Integration Tests
+## Evidence
+
+All evidence is captured from **real CLI outputs** during lab execution:
+
+| File | Content |
+|------|---------|
+| `evidence/cli/01_topology.txt` | `ip netns list` + interface IPs |
+| `evidence/cli/05_ipsec_status.txt` | `ipsec statusall` (SA ESTABLISHED) |
+| `evidence/cli/06_xfrm_state.txt` | `ip xfrm state` (ESP SAs with keys) |
+| `evidence/cli/07_ping_test.txt` | Ping through encrypted tunnel |
+| `evidence/cli/09_esp_sa_keys.txt` | XFRM state + Wireshark CSV |
+| `evidence/cli/10_capture_analysis.txt` | `tcpdump` packet analysis |
+| `evidence/IPsec_Lab_Informe.pdf` | Full 10-section academic report |
+
+### Generate Evidence
 
 ```bash
-make test-unit
+make evidence          # Text evidence files
+python3 scripts/generate-pdf-report.py  # PDF report
 ```
 
-Verifica:
-- Docker image build
-- Namespace creation
-- veth pair connectivity
-- IP configuration
+---
 
-### E2E Tests
+## Wireshark Decryption
 
-```bash
-make test-e2e
-```
-
-Verifica:
-- strongSwan charon startup
-- IKEv2 SA establishment
-- CHILD SA installation
-- ESP traffic flow
-- XFRM state
-- Wireshark keys generation
-- Packet capture
-
-### Security Tests
-
-```bash
-make test-security
-```
-
-Verifica:
-- Docker image vulnerabilities (Trivy)
-- Dockerfile best practices
-- Shell script security
-- Configuration security
-- Network isolation
-
-### Run All Tests
-
-```bash
-make test-all
-```
-
-## Análisis Wireshark
-
-```bash
-# Abrir captura
-wireshark wireshark_keys/capture.pcap
-
-# Descifrar ESP: Edit → Preferences → Protocols → ESP
-# Cargar wireshark_keys/esp_sa
-```
-
-### Formato esp_sa
+### esp_sa Format (CSV)
 
 ```
 "IPv4","src_ip","dst_ip","0xSPI","AES-CBC [RFC3602]","0xenc_key","HMAC-SHA-256-128 [RFC4868]","0xauth_key"
 ```
 
-## Estructura de Archivos
+### Step-by-Step
 
-```
-lab/
-├── Dockerfile                  # Ubuntu 22.04 + strongSwan 5.9.5
-├── Makefile                    # Comandos de automatización
-├── README.md                   # Documentación
-├── .github/workflows/ci.yml   # CI/CD pipeline
-├── configs/
-│   ├── gw-east/
-│   │   ├── ipsec.conf          # IKEv2 config
-│   │   └── ipsec.secrets.stroke # PSK
-│   ├── gw-west/
-│   │   ├── ipsec.conf
-│   │   └── ipsec.secrets.stroke
-│   ├── strongswan-east.conf    # charon config
-│   └── strongswan-west.conf
-├── scripts/
-│   ├── run-lab.sh              # Script principal
-│   └── evidence.sh             # Generador de evidencias
-├── tests/
-│   ├── 01-unit.bats            # Tests unitarios
-│   ├── 02-e2e.bats             # Tests E2E
-│   └── 03-security.bats        # Tests de seguridad
-└── wireshark_keys/             # Output: capture.pcap + esp_sa
+1. Open `wireshark_keys/capture.pcap` in Wireshark
+2. Go to **Edit → Preferences → Protocols → ESP**
+3. Check **"Enable ESP decryption"**
+4. Click **"Edit..."** next to esp_sa file
+5. Load `wireshark_keys/esp_sa`
+6. Apply filter: `icmp` to see decrypted ping traffic
+
+### Verify with tshark
+
+```bash
+tshark -r wireshark_keys/capture.pcap -o "esp.enable_encryption_decode: TRUE"
 ```
 
-## CI/CD Pipeline
+---
 
-El pipeline incluye:
+## Makefile Commands
 
-1. **Lint**: Hadolint (Dockerfile) + ShellCheck (scripts)
-2. **Security**: Gitleaks (secret scanning) + Trivy (vulnerabilities)
-3. **Build**: Docker image build + cache
-4. **Test**: Unit + E2E tests
-5. **Scan**: Trivy image scan
-6. **Push**: Docker Hub (solo main branch)
+| Command | Description |
+|---------|-------------|
+| `make build` | Build Docker image |
+| `make run` | Run lab (interactive, waits) |
+| `make run-bg` | Run lab in background |
+| `make stop` | Stop lab container |
+| `make status` | Check IKE/ESP SA status |
+| `make validate` | Full validation suite |
+| `make capture` | Capture ESP traffic to pcap |
+| `make evidence` | Generate text evidence files |
+| `make test-unit` | Unit tests (BATS) |
+| `make test-e2e` | End-to-end tests (BATS) |
+| `make test-security` | Security tests (Trivy, Hadolint) |
+| `make test-all` | Run all tests |
+| `make lint` | Lint Dockerfile + scripts |
+| `make trivy` | Scan image for CVEs |
+| `make push` | Push to Docker Hub |
+| `make clean` | Remove containers + images |
 
-### Secrets requeridos
-
-- `DOCKERHUB_USERNAME`: Usuario de Docker Hub
-- `DOCKERHUB_TOKEN`: Token de Docker Hub
+---
 
 ## Docker Hub
 
 ```bash
-# Login
-docker login
-
 # Pull
 docker pull statick/ipsec-lab:latest
 
-# Ejecutar
+# Run
 docker run --rm --privileged --network host statick/ipsec-lab:latest
 ```
 
-## Solución de Problemas
+> **Note:** Requires `--privileged` for network namespace operations.
+
+---
+
+## Project Structure
+
+```
+ipsec-lab/
+├── Dockerfile                       # Ubuntu 22.04 + strongSwan 5.9.5
+├── Makefile                         # 20+ automation targets
+├── README.md                        # This file
+├── .github/workflows/ci.yml        # CI/CD pipeline
+├── configs/
+│   ├── gw-east/
+│   │   ├── ipsec.conf               # IKEv2 config (initiator)
+│   │   └── ipsec.secrets.stroke     # PSK
+│   ├── gw-west/
+│   │   ├── ipsec.conf               # IKEv2 config (responder)
+│   │   └── ipsec.secrets.stroke
+│   ├── strongswan-east.conf         # charon daemon config
+│   └── strongswan-west.conf
+├── scripts/
+│   ├── run-lab.sh                   # Main lab script
+│   ├── capture-evidence.sh          # CLI evidence capture
+│   ├── evidence.sh                  # Evidence generator
+│   ├── generate-pdf-report.py       # PDF report (ReportLab)
+│   └── generate-screenshots.sh      # HTML → PNG
+├── tests/
+│   ├── 01-unit.bats                 # Unit tests
+│   ├── 02-e2e.bats                  # End-to-end tests
+│   └── 03-security.bats             # Security tests
+├── evidence/
+│   ├── cli/                         # Real CLI outputs (11 files)
+│   ├── screenshots/                 # HTML diagrams + PNG
+│   ├── METODOLOGIA.md               # Methodology
+│   ├── index.html                   # Evidence viewer
+│   └── IPsec_Lab_Informe.pdf        # Academic report
+└── wireshark_keys/                  # Output directory
+    ├── capture.pcap                 # ESP + ICMP packets
+    └── esp_sa                       # Wireshark decryption keys
+```
+
+---
+
+## CI/CD Pipeline
+
+```
+Lint → Security → Build → Unit Tests → E2E Tests → Docker Scan → Push
+ Hadolint    Trivy    Buildx     BATS        BATS     Dockle+Trivy   Hub
+ ShellCheck                                          Advisory       (main)
+```
+
+| Stage | Tool | Purpose |
+|-------|------|---------|
+| Lint | Hadolint + ShellCheck | Static analysis |
+| Security | Trivy (fs) | Vulnerability scan |
+| Build | Docker Buildx | Image build + cache |
+| Unit Tests | BATS | 13 integration tests |
+| E2E Tests | BATS | 15 end-to-end tests |
+| Scan | Dockle + Trivy | Best practices + CVEs |
+| Push | Docker Hub | Auto-publish on main |
+
+### Required Secrets
+
+| Secret | Description |
+|--------|-------------|
+| `DOCKERHUB_USERNAME` | Docker Hub username |
+| `DOCKERHUB_TOKEN` | Docker Hub access token |
+
+---
+
+## Troubleshooting
 
 ### "charon already running"
 
-El script hace PID juggling:
-1. Inicia ns-west → crea `/var/run/charon.pid`
-2. Copia PID a `/tmp/charon-west.pid`
-3. Inicia ns-east → crea nuevo PID
+The script uses PID juggling to run two charon instances:
+1. Start ns-west → creates `/var/run/charon.pid`
+2. Copy PID to `/tmp/charon-west.pid`
+3. Start ns-east → creates new PID file
 
-### Ping funciona pero sin tráfico ESP
+### Ping works but no ESP traffic
 
-Usar IPs de subred protegida:
+Use protected subnet IPs (not gateway transit IPs):
+
 ```bash
 docker exec ipsec-lab bash -c 'ip netns exec ns-east ping -c 3 10.20.0.1'
 ```
 
-## Referencias
+### Container won't start
 
-- [strongSwan Documentation](https://docs.strongswan.org)
-- [strongSwan Network Namespaces](https://docs.strongswan.org/docs/latest/howtos/nameSpaces.html)
+Ensure Colima is running with correct settings:
+```bash
+colima status    # Should show: runtime: docker, mountType: virtiofs
+colima start --cpu 4 --memory 8
+```
+
+---
+
+## References
+
+- [strongSwan Documentation](https://docs.strongswan.org/)
+- [RFC 7296 — IKEv2](https://tools.ietf.org/html/rfc7296)
+- [RFC 4303 — ESP](https://tools.ietf.org/html/rfc4303)
+- [RFC 3602 — AES-CBC for IPsec](https://tools.ietf.org/html/rfc3602)
+- [RFC 4868 — HMAC-SHA-256 for IPsec](https://tools.ietf.org/html/rfc4868)
 - [Wireshark ESP Decryption](https://www.wireshark.org/docs/wsug_html_chunked/ChDecryptionSection.html)
-- [IPsec RFC 4303](https://tools.ietf.org/html/rfc4303)
+- [Linux XFRM (IPsec Kernel)](https://www.kernel.org/doc/html/latest/networking/ipsec.html)
 
-## Autor
+---
 
-Desarrollado como parte del Máster en Ciberseguridad — UCM (2024-2025)
+<div align="center">
 
-## Licencia
+**Developed as part of the Master in Cybersecurity — UCM (2024-2025)**
 
-MIT
+[![GitHub](https://img.shields.io/badge/GitHub-statick88-181717?logo=github)](https://github.com/statick88)
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-statick-2496ED?logo=docker)](https://hub.docker.com/r/statick/ipsec-lab)
+
+</div>
+]]>
