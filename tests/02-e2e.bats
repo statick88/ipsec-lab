@@ -14,11 +14,19 @@ teardown() {
   docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
 }
 
+# Helper: skip if in CI (no --privileged support)
+skip_if_ci() {
+  if [ "${CI:-}" = "true" ]; then
+    skip "Skipped in CI (requires --privileged)"
+  fi
+}
+
 # =============================================================================
 # STRONGSWAN TESTS
 # =============================================================================
 
 @test "strongSwan charon starts in ns-east" {
+  skip_if_ci
   docker build -t "$IMAGE_NAME" . 2>/dev/null
   docker run -d --privileged --network host \
     --name "$CONTAINER_NAME" \
@@ -30,6 +38,7 @@ teardown() {
 }
 
 @test "strongSwan charon starts in ns-west" {
+  skip_if_ci
   docker build -t "$IMAGE_NAME" . 2>/dev/null
   docker run -d --privileged --network host \
     --name "$CONTAINER_NAME" \
@@ -48,6 +57,7 @@ teardown() {
 # =============================================================================
 
 @test "IKEv2 SA is ESTABLISHED" {
+  skip_if_ci
   docker build -t "$IMAGE_NAME" . 2>/dev/null
   docker run -d --privileged --network host \
     --name "$CONTAINER_NAME" \
@@ -60,6 +70,7 @@ teardown() {
 }
 
 @test "CHILD_SA is INSTALLED" {
+  skip_if_ci
   docker build -t "$IMAGE_NAME" . 2>/dev/null
   docker run -d --privileged --network host \
     --name "$CONTAINER_NAME" \
@@ -72,6 +83,7 @@ teardown() {
 }
 
 @test "IKE proposal uses AES_CBC_256" {
+  skip_if_ci
   docker build -t "$IMAGE_NAME" . 2>/dev/null
   docker run -d --privileged --network host \
     --name "$CONTAINER_NAME" \
@@ -84,6 +96,7 @@ teardown() {
 }
 
 @test "ESP proposal uses AES_CBC_256" {
+  skip_if_ci
   docker build -t "$IMAGE_NAME" . 2>/dev/null
   docker run -d --privileged --network host \
     --name "$CONTAINER_NAME" \
@@ -100,6 +113,7 @@ teardown() {
 # =============================================================================
 
 @test "ESP traffic flows between protected subnets" {
+  skip_if_ci
   docker build -t "$IMAGE_NAME" . 2>/dev/null
   docker run -d --privileged --network host \
     --name "$CONTAINER_NAME" \
@@ -115,6 +129,7 @@ teardown() {
 }
 
 @test "XFRM state shows tunnel mode" {
+  skip_if_ci
   docker build -t "$IMAGE_NAME" . 2>/dev/null
   docker run -d --privileged --network host \
     --name "$CONTAINER_NAME" \
@@ -129,6 +144,7 @@ teardown() {
 }
 
 @test "XFRM policies are configured" {
+  skip_if_ci
   docker build -t "$IMAGE_NAME" . 2>/dev/null
   docker run -d --privileged --network host \
     --name "$CONTAINER_NAME" \
@@ -146,6 +162,7 @@ teardown() {
 # =============================================================================
 
 @test "esp_sa file is generated" {
+  skip_if_ci
   docker build -t "$IMAGE_NAME" . 2>/dev/null
   docker run -d --privileged --network host \
     --name "$CONTAINER_NAME" \
@@ -157,6 +174,7 @@ teardown() {
 }
 
 @test "esp_sa has correct Wireshark CSV format" {
+  skip_if_ci
   docker build -t "$IMAGE_NAME" . 2>/dev/null
   docker run -d --privileged --network host \
     --name "$CONTAINER_NAME" \
@@ -172,6 +190,7 @@ teardown() {
 }
 
 @test "esp_sa contains both directions" {
+  skip_if_ci
   docker build -t "$IMAGE_NAME" . 2>/dev/null
   docker run -d --privileged --network host \
     --name "$CONTAINER_NAME" \
@@ -189,6 +208,7 @@ teardown() {
 # =============================================================================
 
 @test "capture.pcap is generated" {
+  skip_if_ci
   docker build -t "$IMAGE_NAME" . 2>/dev/null
   docker run -d --privileged --network host \
     --name "$CONTAINER_NAME" \
@@ -205,6 +225,7 @@ teardown() {
 }
 
 @test "capture.pcap contains ESP packets" {
+  skip_if_ci
   docker build -t "$IMAGE_NAME" . 2>/dev/null
   docker run -d --privileged --network host \
     --name "$CONTAINER_NAME" \
