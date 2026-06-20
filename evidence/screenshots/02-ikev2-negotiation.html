@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Negociación IKEv2 — IPsec Lab</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a1a; color: #e0e0e0; padding: 40px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 28px; color: #00d4ff; text-align: center; margin-bottom: 8px; }
+  .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 40px; }
+  
+  .diagram { background: #0d1117; border-radius: 16px; border: 1px solid #30363d; padding: 30px; position: relative; overflow: hidden; }
+  .diagram::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #00d4ff, #7c3aed); }
+  
+  .phase { margin-bottom: 24px; }
+  .phase-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .phase-num { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+  .phase-num.ike { background: rgba(0, 212, 255, 0.15); color: #00d4ff; border: 1px solid #00d4ff; }
+  .phase-num.child { background: rgba(124, 58, 237, 0.15); color: #7c3aed; border: 1px solid #7c3aed; }
+  .phase-title { font-size: 16px; font-weight: 600; }
+  .phase-title.ike { color: #00d4ff; }
+  .phase-title.child { color: #7c3aed; }
+  
+  .messages { margin-left: 44px; }
+  .msg { display: flex; align-items: stretch; margin-bottom: 8px; }
+  .msg-arrow { width: 200px; display: flex; align-items: center; justify-content: center; position: relative; }
+  .msg-line { height: 2px; flex: 1; }
+  .msg-line.right { background: linear-gradient(90deg, #00d4ff, #30363d); }
+  .msg-line.left { background: linear-gradient(90deg, #30363d, #7c3aed); }
+  .msg-line::after { content: ''; position: absolute; top: -4px; }
+  .msg-line.right::after { right: 0; border: 5px solid transparent; border-left: 6px solid #30363d; }
+  .msg-line.left::after { left: 0; border: 5px solid transparent; border-right: 6px solid #7c3aed; }
+  
+  .msg-label { font-family: 'SF Mono', monospace; font-size: 11px; padding: 6px 12px; border-radius: 6px; white-space: nowrap; }
+  .msg-label.request { background: rgba(0, 212, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); color: #00d4ff; }
+  .msg-label.response { background: rgba(124, 58, 237, 0.1); border: 1px solid rgba(124, 58, 237, 0.3); color: #7c3aed; }
+  
+  .endpoints { display: flex; justify-content: space-between; margin-bottom: 16px; padding: 0 20px; }
+  .endpoint { font-size: 13px; font-weight: 600; padding: 6px 16px; border-radius: 8px; }
+  .endpoint.east { background: rgba(0, 212, 255, 0.1); color: #00d4ff; border: 1px solid rgba(0, 212, 255, 0.3); }
+  .endpoint.west { background: rgba(124, 58, 237, 0.1); color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.3); }
+  
+  .divider { height: 1px; background: #30363d; margin: 20px 0; }
+  
+  .sa-box { display: inline-block; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-family: monospace; margin: 4px; }
+  .sa-box.established { background: rgba(63, 185, 80, 0.15); border: 1px solid rgba(63, 185, 80, 0.4); color: #3fb950; }
+  .sa-box.installed { background: rgba(63, 185, 80, 0.15); border: 1px solid rgba(63, 185, 80, 0.4); color: #3fb950; }
+  
+  .result { margin-top: 20px; padding: 16px; background: rgba(63, 185, 80, 0.05); border: 1px solid rgba(63, 185, 80, 0.2); border-radius: 8px; }
+  .result-title { font-size: 14px; font-weight: 600; color: #3fb950; margin-bottom: 8px; }
+  .result-items { display: flex; flex-wrap: wrap; gap: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Negociación IKEv2 — Flujo de Mensajes</h1>
+  <p class="subtitle">Intercambio de mensajes entre Gateway East (initiator) y Gateway West (responder)</p>
+  
+  <div class="diagram">
+    <div class="endpoints">
+      <div class="endpoint east">Gateway East (10.0.0.1)</div>
+      <div class="endpoint west">Gateway West (10.0.0.2)</div>
+    </div>
+    
+    <!-- IKE_SA_INIT -->
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-num ike">1</div>
+        <div class="phase-title ike">IKE_SA_INIT</div>
+      </div>
+      <div class="messages">
+        <div class="msg">
+          <div class="msg-label request">SPI_i, g^xi, Ni</div>
+          <div class="msg-arrow"><div class="msg-line right"></div></div>
+          <div class="msg-label response">SPI_r, g^xr, Nr</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- IKE_AUTH -->
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-num ike">2</div>
+        <div class="phase-title ike">IKE_AUTH</div>
+      </div>
+      <div class="messages">
+        <div class="msg">
+          <div class="msg-label request">IDi, AUTH, SA, TSi, TSr</div>
+          <div class="msg-arrow"><div class="msg-line right"></div></div>
+          <div class="msg-label response">IDr, AUTH, SA, TSi, TSr</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <!-- CREATE_CHILD_SA -->
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-num child">3</div>
+        <div class="phase-title child">CREATE_CHILD_SA (ESP)</div>
+      </div>
+      <div class="messages">
+        <div class="msg">
+          <div class="msg-label request">SA, Nonce, KE, TSi, TSr</div>
+          <div class="msg-arrow"><div class="msg-line left"></div></div>
+          <div class="msg-label response">SA, Nonce, KE, TSi, TSr</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <!-- Result -->
+    <div class="result">
+      <div class="result-title">SAs Establecidos</div>
+      <div class="result-items">
+        <div class="sa-box established">IKE SA: ESTABLISHED</div>
+        <div class="sa-box installed">CHILD SA: INSTALLED (ESP)</div>
+        <div class="sa-box established">Algo: AES_CBC_256</div>
+        <div class="sa-box established">Integrity: HMAC_SHA2_256_128</div>
+        <div class="sa-box established">PRF: HMAC_SHA2_256</div>
+        <div class="sa-box established">DH: MODP_2048</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

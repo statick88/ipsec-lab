@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evidencias — IPsec Lab</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a1a; color: #e0e0e0; min-height: 100vh; }
+  .header { background: linear-gradient(135deg, #0d1117 0%, #161b22 100%); border-bottom: 1px solid #30363d; padding: 40px 0; text-align: center; }
+  .header h1 { font-size: 36px; color: #00d4ff; margin-bottom: 8px; }
+  .header p { color: #8b949e; font-size: 16px; }
+  .header .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 12px; }
+  .badge-ok { background: rgba(63, 185, 80, 0.15); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.3); }
+  
+  .content { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+  
+  .section { margin-bottom: 40px; }
+  .section-title { font-size: 22px; font-weight: 700; color: #e0e0e0; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .section-title .num { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+  .num-blue { background: rgba(0, 212, 255, 0.15); color: #00d4ff; border: 1px solid rgba(0, 212, 255, 0.3); }
+  .num-purple { background: rgba(124, 58, 237, 0.15); color: #7c3aed; border: 1px solid rgba(124, 58, 237, 0.3); }
+  .num-green { background: rgba(63, 185, 80, 0.15); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.3); }
+  .num-yellow { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+  
+  .card { background: #0d1117; border: 1px solid #30363d; border-radius: 12px; padding: 20px; margin-bottom: 12px; transition: border-color 0.2s; }
+  .card:hover { border-color: #00d4ff; }
+  .card-title { font-size: 16px; font-weight: 600; color: #e0e0e0; margin-bottom: 4px; }
+  .card-desc { font-size: 13px; color: #8b949e; margin-bottom: 12px; }
+  .card-link { display: inline-block; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; transition: background 0.2s; }
+  .link-html { background: rgba(0, 212, 255, 0.1); color: #00d4ff; border: 1px solid rgba(0, 212, 255, 0.3); }
+  .link-html:hover { background: rgba(0, 212, 255, 0.2); }
+  .link-png { background: rgba(63, 185, 80, 0.1); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.3); }
+  .link-png:hover { background: rgba(63, 185, 80, 0.2); }
+  .link-md { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+  .link-md:hover { background: rgba(245, 158, 11, 0.2); }
+  
+  .terminal { background: #161b22; border-radius: 8px; padding: 16px; font-family: 'SF Mono', monospace; font-size: 12px; border: 1px solid #21262d; margin-top: 16px; }
+  .terminal .prompt { color: #3fb950; }
+  .terminal .cmd { color: #e0e0e0; }
+  
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+  
+  .footer { text-align: center; padding: 20px; color: #484f58; font-size: 12px; border-top: 1px solid #21262d; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Evidencias — Lab IPsec IKEv2/ESP</h1>
+  <p>Documentación académica del túnel IPsec con strongSwan sobre Docker</p>
+  <span class="badge badge-ok">9 SECCIONES COMPLETAS</span>
+</div>
+
+<div class="content">
+  
+  <!-- Metodología -->
+  <div class="section">
+    <div class="section-title">
+      <div class="num num-blue">M</div>
+      Metodología
+    </div>
+    <div class="card">
+      <div class="card-title">Metodología de Implementación</div>
+      <div class="card-desc">Documento completo: diseño, configuración, ejecución, validación. Incluye arquitectura, herramientas, criterios de aceptación y referencias RFC.</div>
+      <a href="METODOLOGIA.md" class="card-link link-md">Ver METODOLOGIA.md</a>
+    </div>
+  </div>
+  
+  <!-- Diagramas -->
+  <div class="section">
+    <div class="section-title">
+      <div class="num num-purple">D</div>
+      Diagramas y Screenshots
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">1. Topología de Red</div>
+        <div class="card-desc">Arquitectura del lab: namespaces, veth pair, subnets protegidos, gateways.</div>
+        <a href="screenshots/01-topology.html" class="card-link link-html">HTML</a>
+      </div>
+      <div class="card">
+        <div class="card-title">2. Negociación IKEv2</div>
+        <div class="card-desc">Flujo de mensajes: IKE_SA_INIT → IKE_AUTH → CREATE_CHILD_SA.</div>
+        <a href="screenshots/02-ikev2-negotiation.html" class="card-link link-html">HTML</a>
+      </div>
+      <div class="card">
+        <div class="card-title">3. ESP Tunnel & XFRM</div>
+        <div class="card-desc">Estado XFRM, políticas, tráfico cifrado entre subnets protegidos.</div>
+        <a href="screenshots/03-esp-tunnel.html" class="card-link link-html">HTML</a>
+      </div>
+      <div class="card">
+        <div class="card-title">4. Wireshark Decryption</div>
+        <div class="card-desc">Claves ESP, formato CSV, paquetes descifrados con tshark.</div>
+        <a href="screenshots/04-wireshark-decryption.html" class="card-link link-html">HTML</a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Comandos -->
+  <div class="section">
+    <div class="section-title">
+      <div class="num num-green">C</div>
+      Comandos de Validación
+    </div>
+    <div class="card">
+      <div class="card-title">Comandos para generar evidencia localmente</div>
+      <div class="terminal">
+        <div><span class="prompt">$</span> <span class="cmd">make run                    # Iniciar lab</span></div>
+        <div><span class="prompt">$</span> <span class="cmd">make status                 # Verificar SA</span></div>
+        <div><span class="prompt">$</span> <span class="cmd">make capture                # Capturar ESP</span></div>
+        <div><span class="prompt">$</span> <span class="cmd">make evidence               # Generar evidencias</span></div>
+        <div><span class="prompt">$</span> <span class="cmd">open evidence/              # Ver resultados</span></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Docker Hub -->
+  <div class="section">
+    <div class="section-title">
+      <div class="num num-yellow">H</div>
+      Docker Hub
+    </div>
+    <div class="card">
+      <div class="card-title">Imagen del Lab</div>
+      <div class="card-desc">Imagen Docker pre-construida con todo el lab incluido.</div>
+      <div class="terminal">
+        <div><span class="prompt">$</span> <span class="cmd">docker pull statick/ipsec-lab:latest</span></div>
+        <div><span class="prompt">$</span> <span class="cmd">docker run -d --privileged --network host statick/ipsec-lab</span></div>
+      </div>
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+  IPsec Lab — Diego Saavedra — Universidad Complutense de Madrid — MSc Ciberseguridad 2024
+</div>
+
+</body>
+</html>

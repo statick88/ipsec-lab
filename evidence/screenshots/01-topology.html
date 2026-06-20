@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Topología de Red — IPsec Lab</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a1a; color: #e0e0e0; padding: 40px; min-height: 100vh; }
+  .container { max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 28px; color: #00d4ff; margin-bottom: 8px; text-align: center; }
+  .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 40px; }
+  .topology { position: relative; height: 520px; background: linear-gradient(135deg, #0d1117 0%, #161b22 100%); border-radius: 16px; border: 1px solid #30363d; padding: 30px; overflow: hidden; }
+  .topology::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #00d4ff, #7c3aed, #00d4ff); }
+  
+  .node { position: absolute; background: #1c2128; border: 2px solid #30363d; border-radius: 12px; padding: 16px 20px; text-align: center; min-width: 180px; }
+  .node.active { border-color: #00d4ff; box-shadow: 0 0 20px rgba(0, 212, 255, 0.15); }
+  .node-title { font-size: 16px; font-weight: 700; color: #00d4ff; margin-bottom: 6px; }
+  .node-ip { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; color: #8b949e; }
+  .node-detail { font-size: 11px; color: #484f58; margin-top: 4px; }
+  
+  .ns-east { top: 80px; left: 40px; }
+  .ns-west { top: 80px; right: 40px; }
+  .internet { top: 20px; left: 50%; transform: translateX(-50%); border-color: #7c3aed; }
+  .internet .node-title { color: #7c3aed; }
+  
+  .protected { position: absolute; border: 2px dashed #30363d; border-radius: 12px; padding: 12px; }
+  .protected-east { bottom: 60px; left: 40px; width: 220px; }
+  .protected-west { bottom: 60px; right: 40px; width: 220px; }
+  .protected-label { font-size: 11px; color: #484f58; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  
+  .arrow { position: absolute; height: 3px; background: #30363d; }
+  .arrow::after { content: ''; position: absolute; right: -8px; top: -5px; border: 6px solid transparent; border-left: 8px solid #30363d; }
+  .arrow-left::after { right: auto; left: -8px; border-left: none; border-right: 8px solid #30363d; }
+  
+  .arrow-ikev2 { top: 140px; left: 50%; transform: translateX(-50%); width: 300px; background: linear-gradient(90deg, #00d4ff, #7c3aed); }
+  .arrow-ikev2::after { border-left-color: #7c3aed; }
+  .arrow-ikev2::before { content: 'IKEv2 + ESP'; position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #00d4ff; font-weight: 600; white-space: nowrap; }
+  
+  .arrow-veth { top: 200px; left: 50%; transform: translateX(-50%); width: 300px; }
+  .arrow-veth::before { content: 'veth pair (10.0.0.0/30)'; position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #8b949e; white-space: nowrap; }
+  
+  .arrow-protected-left { bottom: 140px; left: 260px; width: 60px; transform: rotate(-90deg); }
+  .arrow-protected-right { bottom: 140px; right: 260px; width: 60px; transform: rotate(90deg); }
+  
+  .legend { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; font-size: 11px; color: #8b949e; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .legend-dot.ike { background: #00d4ff; }
+  .legend-dot.esp { background: #7c3aed; }
+  .legend-dot.net { background: #30363d; }
+  
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-top: 4px; }
+  .badge-active { background: rgba(0, 212, 255, 0.15); color: #00d4ff; }
+  .badge-protected { background: rgba(124, 58, 237, 0.15); color: #7c3aed; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Topología de Red — IPsec Lab</h1>
+  <p class="subtitle">IKEv2/ESP Tunnel con strongSwan sobre Docker Network Namespaces</p>
+  
+  <div class="topology">
+    <!-- Internet / Transit -->
+    <div class="node internet">
+      <div class="node-title">Red de Tránsito</div>
+      <div class="node-ip">10.0.0.0/30</div>
+      <div class="node-detail">veth-east ↔ veth-west</div>
+    </div>
+    
+    <!-- Gateway East -->
+    <div class="node ns-east active">
+      <div class="node-title">Gateway East</div>
+      <div class="node-ip">10.0.0.1/30</div>
+      <div class="node-detail">strongSwan charon (starter)</div>
+      <div class="node-detail">auto=start</div>
+      <span class="badge badge-active">INITIATOR</span>
+    </div>
+    
+    <!-- Gateway West -->
+    <div class="node ns-west active">
+      <div class="node-title">Gateway West</div>
+      <div class="node-ip">10.0.0.2/30</div>
+      <div class="node-detail">strongSwan charon (starter)</div>
+      <div class="node-detail">auto=add</div>
+      <span class="badge badge-active">RESPONDER</span>
+    </div>
+    
+    <!-- Protected East -->
+    <div class="protected protected-east">
+      <div class="protected-label">Subnet Protegido East</div>
+      <div class="node-ip" style="font-size: 14px;">10.10.0.1/24</div>
+      <div class="node-detail">lo interface en ns-east</div>
+      <span class="badge badge-protected">PROTECTED</span>
+    </div>
+    
+    <!-- Protected West -->
+    <div class="protected protected-west">
+      <div class="protected-label">Subnet Protegido West</div>
+      <div class="node-ip" style="font-size: 14px;">10.20.0.1/24</div>
+      <div class="node-detail">lo interface en ns-west</div>
+      <span class="badge badge-protected">PROTECTED</span>
+    </div>
+    
+    <!-- Arrows -->
+    <div class="arrow arrow-ikev2"></div>
+    <div class="arrow arrow-veth"></div>
+    <div class="arrow arrow-protected-left"></div>
+    <div class="arrow arrow-protected-right"></div>
+    
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot ike"></div> IKEv2 negotiation</div>
+      <div class="legend-item"><div class="legend-dot esp"></div> ESP encrypted traffic</div>
+      <div class="legend-item"><div class="legend-dot net"></div> Physical link</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

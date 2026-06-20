@@ -20,8 +20,12 @@ wireshark_keys/esp_sa*
 wireshark_keys/ikev2_*
 wireshark_keys/capture.*
 
-# Evidence (generated)
-evidence/
+# Evidence (generated at runtime - keep docs, ignore captures)
+evidence/*.pcap
+evidence/*.pcapng
+evidence/*.txt
+evidence/*.log
+evidence/captures/
 
 # StrongSwan source
 strongswan-*.tar.gz
@@ -60,3 +64,6 @@ coverage.xml
 
 # BATS
 tests/*.bats.bak
+
+# Skill registry cache
+.atl/

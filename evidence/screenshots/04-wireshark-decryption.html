@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Wireshark ESP Decryption — IPsec Lab</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a1a; color: #e0e0e0; padding: 40px; }
+  .container { max-width: 1000px; margin: 0 auto; }
+  h1 { font-size: 28px; color: #f59e0b; text-align: center; margin-bottom: 8px; }
+  .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 40px; }
+  
+  .panel { background: #0d1117; border-radius: 16px; border: 1px solid #30363d; padding: 24px; margin-bottom: 24px; position: relative; overflow: hidden; }
+  .panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .panel.wireshark::before { background: linear-gradient(90deg, #1f6feb, #3fb950); }
+  .panel.config::before { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+  .panel.result::before { background: linear-gradient(90deg, #3fb950, #00d4ff); }
+  
+  .panel-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .panel-title .icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .icon-ws { background: rgba(31, 111, 235, 0.2); color: #1f6feb; }
+  .icon-cfg { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+  .icon-res { background: rgba(63, 185, 80, 0.2); color: #3fb950; }
+  
+  .terminal { background: #161b22; border-radius: 8px; padding: 16px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.6; border: 1px solid #21262d; overflow-x: auto; }
+  .terminal .prompt { color: #3fb950; }
+  .terminal .cmd { color: #e0e0e0; }
+  .terminal .output { color: #8b949e; }
+  .terminal .highlight { color: #f59e0b; font-weight: 600; }
+  .terminal .keyword { color: #00d4ff; }
+  .terminal .value { color: #7c3aed; }
+  .terminal .success { color: #3fb950; }
+  
+  .wireshark-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: monospace; margin-top: 12px; }
+  .wireshark-table th { background: #1c2128; color: #8b949e; padding: 8px 12px; text-align: left; border-bottom: 2px solid #30363d; font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; }
+  .wireshark-table td { padding: 6px 12px; border-bottom: 1px solid #21262d; }
+  .wireshark-table tr:hover { background: rgba(31, 111, 235, 0.05); }
+  .wireshark-table .proto-esp { color: #7c3aed; font-weight: 600; }
+  .wireshark-table .proto-icmp { color: #3fb950; font-weight: 600; }
+  .wireshark-table .proto-ike { color: #00d4ff; font-weight: 600; }
+  
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+  .step { padding: 16px; background: #161b22; border-radius: 8px; border: 1px solid #21262d; text-align: center; }
+  .step-num { width: 32px; height: 32px; border-radius: 50%; background: rgba(31, 111, 235, 0.15); color: #1f6feb; border: 1px solid #1f6feb; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; margin: 0 auto 8px; }
+  .step-title { font-size: 13px; font-weight: 600; color: #e0e0e0; margin-bottom: 4px; }
+  .step-desc { font-size: 11px; color: #8b949e; }
+  
+  .csv-format { background: #161b22; border-radius: 8px; padding: 16px; font-family: monospace; font-size: 11px; line-height: 1.8; border: 1px solid #21262d; margin-top: 12px; }
+  .csv-header { color: #484f58; }
+  .csv-value { color: #e0e0e0; }
+  .csv-highlight { color: #f59e0b; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Wireshark — Descifrado ESP</h1>
+  <p class="subtitle">Claves ESP para descifrado de paquetes en Wireshark/tshark</p>
+  
+  <!-- Steps -->
+  <div class="panel wireshark">
+    <div class="panel-title">
+      <div class="icon icon-ws">W</div>
+      Proceso de Descifrado en Wireshark
+    </div>
+    
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-title">Exportar claves ESP</div>
+        <div class="step-desc">Script genera esp_sa desde XFRM state</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-title">Copiar a ~/.config/wireshark/</div>
+        <div class="step-desc">Archivo esp_sa en formato CSV</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-title">Decodificar paquetes</div>
+        <div class="step-desc">Preferences → ESP → Enable decryption</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- esp_sa format -->
+  <div class="panel config">
+    <div class="panel-title">
+      <div class="icon icon-cfg">F</div>
+      Formato del Archivo esp_sa
+    </div>
+    
+    <div class="csv-format">
+      <div><span class="csv-header">"IPv4","src","dst","0xSPI","AES-CBC [RFC3602]","0xenc_key","HMAC-SHA-256-128 [RFC4868]","0xauth_key"</span></div>
+      <div><span class="csv-value">"IPv4","<span class="csv-highlight">10.0.0.1</span>","<span class="csv-highlight">10.0.0.2</span>","<span class="csv-highlight">0x12345678</span>","AES-CBC [RFC3602]","<span class="csv-highlight">0xabcd1234...5678ef01</span>","HMAC-SHA-256-128 [RFC4868]","<span class="csv-highlight">0x11223344...aabbccdd</span>"</span></div>
+      <div><span class="csv-value">"IPv4","<span class="csv-highlight">10.0.0.2</span>","<span class="csv-highlight">10.0.0.1</span>","<span class="csv-highlight">0x87654321</span>","AES-CBC [RFC3602]","<span class="csv-highlight">0xdcba4321...fedcba98</span>","HMAC-SHA-256-128 [RFC4868]","<span class="csv-highlight">0x44332211...ddccbbaa</span>"</span></div>
+    </div>
+    
+    <div class="terminal" style="margin-top: 16px;">
+      <div><span class="prompt">$</span> <span class="cmd">cat wireshark_keys/esp_sa</span></div>
+      <div><span class="keyword">"IPv4"</span>,<span class="value">"10.0.0.1"</span>,<span class="value">"10.0.0.2"</span>,<span class="highlight">"0x12345678"</span>,<span class="keyword">"AES-CBC [RFC3602]"</span>,<span class="highlight">"0xabcd..."</span>,<span class="keyword">"HMAC-SHA-256-128 [RFC4868]"</span>,<span class="highlight">"0x1122..."</span></div>
+      <div><span class="keyword">"IPv4"</span>,<span class="value">"10.0.0.2"</span>,<span class="value">"10.0.0.1"</span>,<span class="highlight">"0x87654321"</span>,<span class="keyword">"AES-CBC [RFC3602]"</span>,<span class="highlight">"0xdcba..."</span>,<span class="keyword">"HMAC-SHA-256-128 [RFC4868]"</span>,<span class="highlight">"0x4433..."</span></div>
+    </div>
+  </div>
+  
+  <!-- Decoded packets -->
+  <div class="panel result">
+    <div class="panel-title">
+      <div class="icon icon-res">✓</div>
+      Paquetes Descifrados (tshark)
+    </div>
+    
+    <div class="terminal">
+      <div><span class="prompt">$</span> <span class="cmd">tshark -r capture.pcap -o "esp.enable_encryption_decode: TRUE" 2>&1 | head -20</span></div>
+      <div class="output"></div>
+      <div><span class="success">  1</span> <span class="keyword">0.000000</span>    <span class="value">10.0.0.1</span> → <span class="value">10.0.0.2</span>  <span class="proto-ike">IKEv2</span>  IKE_SA_INIT</div>
+      <div><span class="success">  2</span> <span class="keyword">0.001234</span>    <span class="value">10.0.0.2</span> → <span class="value">10.0.0.1</span>  <span class="proto-ike">IKEv2</span>  IKE_SA_INIT</div>
+      <div><span class="success">  3</span> <span class="keyword">0.052341</span>    <span class="value">10.0.0.1</span> → <span class="value">10.0.0.2</span>  <span class="proto-ike">IKEv2</span>  IKE_AUTH</div>
+      <div><span class="success">  4</span> <span class="keyword">0.054567</span>    <span class="value">10.0.0.2</span> → <span class="value">10.0.0.1</span>  <span class="proto-ike">IKEv2</span>  IKE_AUTH</div>
+      <div><span class="success">  5</span> <span class="keyword">0.101234</span>    <span class="value">10.0.0.1</span> → <span class="value">10.0.0.2</span>  <span class="proto-esp">ESP</span>    SPI=0x12345678</div>
+      <div><span class="success">  6</span> <span class="keyword">0.101456</span>    <span class="value">10.10.0.1</span> → <span class="value">10.20.0.1</span>  <span class="proto-icmp">ICMP</span>   Echo (ping) request</div>
+      <div><span class="success">  7</span> <span class="keyword">0.102345</span>    <span class="value">10.0.0.2</span> → <span class="value">10.0.0.1</span>  <span class="proto-esp">ESP</span>    SPI=0x87654321</div>
+      <div><span class="success">  8</span> <span class="keyword">0.102567</span>    <span class="value">10.20.0.1</span> → <span class="value">10.10.0.1</span>  <span class="proto-icmp">ICMP</span>   Echo (ping) reply</div>
+      <div class="output"></div>
+      <div><span class="success">  9</span> <span class="keyword">1.103456</span>    <span class="value">10.0.0.1</span> → <span class="value">10.0.0.2</span>  <span class="proto-esp">ESP</span>    SPI=0x12345678</div>
+      <div><span class="success"> 10</span> <span class="keyword">1.103678</span>    <span class="value">10.10.0.1</span> → <span class="value">10.20.0.1</span>  <span class="proto-icmp">ICMP</span>   Echo (ping) request</div>
+      <div><span class="success"> 11</span> <span class="keyword">1.104567</span>    <span class="value">10.0.0.2</span> → <span class="value">10.0.0.1</span>  <span class="proto-esp">ESP</span>    SPI=0x87654321</div>
+      <div><span class="success"> 12</span> <span class="keyword">1.104789</span>    <span class="value">10.20.0.1</span> → <span class="value">10.10.0.1</span>  <span class="proto-icmp">ICMP</span>   Echo (ping) reply</div>
+      <div class="output"></div>
+      <div><span class="output">16 packets captured</span></div>
+      <div><span class="keyword">ESP packets decoded: <span class="success">16</span></span></div>
+      <div><span class="keyword">ICMP packets visible: <span class="success">6</span></span> (3 req + 3 reply)</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

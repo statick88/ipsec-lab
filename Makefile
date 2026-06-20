@@ -103,6 +103,11 @@ evidence: ## Generate academic evidence documents
 	@bash scripts/evidence.sh
 	@echo "$(GREEN)Evidence saved to evidence/$(NC)"
 
+screenshots: ## Generate PNG screenshots from HTML evidence
+	@echo "$(GREEN)Generating screenshots...$(NC)"
+	@bash scripts/generate-screenshots.sh
+	@echo "$(GREEN)Open evidence/index.html to view$(NC)"
+
 # =============================================================================
 # TESTS
 # =============================================================================
