@@ -87,7 +87,8 @@ setup() {
 @test "IPsec PSK is not empty" {
   run grep -r "PSK" configs/
   [ "$status" -eq 0 ]
-  ! [[ "$output" == *"PSK \""* ]]
+  [[ "$output" == *"PSK \""* ]]
+  ! [[ "$output" == *"PSK \"\""* ]]
 }
 
 @test "strongSwan config limits plugins" {

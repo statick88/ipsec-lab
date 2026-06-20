@@ -23,7 +23,8 @@ cleanup() {
     ip netns del ns-east 2>/dev/null || true
     ip netns del ns-west 2>/dev/null || true
     ip link del veth-east 2>/dev/null || true
-    rm -f /var/run/charon.pid /var/run/starter.charon.pid 2>/dev/null || true
+    rm -f /var/run/ipsec-ns-east/charon.pid /var/run/ipsec-ns-east/starter.charon.pid 2>/dev/null || true
+    rm -f /var/run/ipsec-ns-west/charon.pid /var/run/ipsec-ns-west/starter.charon.pid 2>/dev/null || true
     rm -f /tmp/charon-east.pid /tmp/charon-west.pid 2>/dev/null || true
     rm -f /tmp/starter-charon-east.pid /tmp/starter-charon-west.pid 2>/dev/null || true
 }
@@ -36,7 +37,8 @@ pkill -9 starter 2>/dev/null || true
 ip netns del ns-east 2>/dev/null || true
 ip netns del ns-west 2>/dev/null || true
 ip link del veth-east 2>/dev/null || true
-rm -f /var/run/charon.pid /var/run/starter.charon.pid 2>/dev/null || true
+rm -f /var/run/ipsec-ns-east/charon.pid /var/run/ipsec-ns-east/starter.charon.pid 2>/dev/null || true
+rm -f /var/run/ipsec-ns-west/charon.pid /var/run/ipsec-ns-west/starter.charon.pid 2>/dev/null || true
 
 # === CREATE NAMESPACES ===
 log "Creating network namespaces..."
@@ -87,9 +89,9 @@ ip netns exec ns-west /usr/sbin/ipsec start --nofork &
 WEST_PID=$!
 sleep 3
 
-cp /var/run/charon.pid /tmp/charon-west.pid 2>/dev/null || true
-cp /var/run/starter.charon.pid /tmp/starter-charon-west.pid 2>/dev/null || true
-rm -f /var/run/charon.pid /var/run/starter.charon.pid
+cp /var/run/ipsec-ns-west/charon.pid /tmp/charon-west.pid 2>/dev/null || true
+cp /var/run/ipsec-ns-west/starter.charon.pid /tmp/starter-charon-west.pid 2>/dev/null || true
+rm -f /var/run/ipsec-ns-west/charon.pid /var/run/ipsec-ns-west/starter.charon.pid
 
 # === START STRONGSWAN IN NS-EAST (initiator) ===
 log "Starting strongSwan in ns-east (initiator)..."

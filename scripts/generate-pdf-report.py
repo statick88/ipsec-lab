@@ -224,7 +224,7 @@ def build_pdf():
         ["Tráfico cifrado", "Verificado", "ICMP ping entre subnets"],
         ["Captura pcap", "Generada", "ESP + ICMP"],
         ["Wireshark keys", "Exportadas", "Formato CSV"],
-        ["Tests", "13/13", "Unit + E2E + Security"],
+        ["Tests", "42/42", "Unit + E2E + Security"],
         ["CI/CD", "Funcional", "GitHub Actions"],
         ["Docker Hub", "Publicada", "statick/ipsec-lab:latest"],
     ]
@@ -575,7 +575,7 @@ def build_pdf():
         ["Security", "Trivy (filesystem)", "Vulnerabilidades"],
         ["Build", "Docker Buildx", "Construcción imagen"],
         ["Unit Tests", "BATS", "13 tests"],
-        ["E2E Tests", "BATS", "15 tests extremo a extremo"],
+        ["E2E Tests", "BATS", "14 tests extremo a extremo"],
         ["Security Scan", "Dockle + Trivy", "Buenas prácticas + CVEs"],
     ]
     ct = Table(cicd, colWidths=[2.5*cm, 4*cm, 6*cm])
@@ -620,7 +620,7 @@ def build_pdf():
         "<b>Funcionamiento:</b> Túnel establecido con AES-CBC-256 / HMAC-SHA-256-128 (RFC 3602, RFC 4868, RFC 7296).",
         "<b>Validación triple:</b> (1) ipsec statusall, (2) XFRM state, (3) decodificación Wireshark/tshark.",
         "<b>Automatización:</b> Makefile con 20+ targets + CI/CD GitHub Actions.",
-        "<b>Calidad:</b> ShellCheck, Hadolint, Trivy, Dockle, BATS (28 tests).",
+        "<b>Calidad:</b> ShellCheck, Hadolint, Trivy, Dockle, BATS (42 tests).",
         "<b>Reproducibilidad:</b> Imagen Docker pública + evidencia CLI real.",
     ]:
         story.append(Paragraph(f"• {c}", bullet_style))

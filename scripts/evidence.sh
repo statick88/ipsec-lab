@@ -44,7 +44,7 @@ header "3. ESTADO DEL TÚNEL IKEv2"
 log "Verificando SA IKEv2..."
 docker exec "$CONTAINER" bash -c '
 echo "=== ipsec statusall ==="
-ipsec statusall
+ip netns exec ns-east ipsec statusall
 echo ""
 echo "=== Verificación de SA ==="
 echo "IKE SA: ESPERE ESTABLISHED"
