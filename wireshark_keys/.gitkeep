@@ -1,0 +1,2 @@
+# This file ensures the wireshark_keys directory is tracked by git
+# Actual key files (*.pcap, esp_sa, ikev2_decryption_table) are gitignored

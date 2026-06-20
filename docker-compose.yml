@@ -1,0 +1,11 @@
+# Docker Compose for IPsec Lab — single container approach
+# One privileged container runs everything: namespaces, veth, 2x strongSwan
+
+services:
+  ipsec-lab:
+    image: ipsec-lab:latest
+    container_name: ipsec-lab
+    privileged: true
+    network_mode: host
+    volumes:
+      - ./wireshark_keys:/wireshark_keys

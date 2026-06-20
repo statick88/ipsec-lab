@@ -1,0 +1,217 @@
+# =============================================================================
+# IPsec Lab - CI/CD Pipeline
+# =============================================================================
+
+name: CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  DOCKER_IMAGE: statick/ipsec-lab
+  DOCKER_TAG: latest
+
+jobs:
+  # =============================================================================
+  # Lint & Security Scanning
+  # =============================================================================
+  lint:
+    name: Lint & Security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Hadolint (Dockerfile linting)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: warning
+
+      - name: ShellCheck (Bash linting)
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: './scripts'
+          severity: 'warning'
+
+      - name: Gitleaks (Secret scanning)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # =============================================================================
+  # Security Scanning
+  # =============================================================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Trivy vulnerability scanner (filesystem)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Dockle (Docker best practices)
+        uses: goodwithtech/dockle-action@main
+        with:
+          image: ''
+          exit-code: '1'
+          exit-level: 'warn'
+
+  # =============================================================================
+  # Build & Test
+  # =============================================================================
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    needs: [lint, security]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Install BATS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Run TDD tests
+        run: bats tests/ipsec-lab.bats --filter "Docker image builds|creates ns-east|veth-east|ns-east has IP|ns-west has IP"
+        timeout-minutes: 5
+
+  # =============================================================================
+  # E2E Tests (requires privileged container)
+  # =============================================================================
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+
+      - name: Install BATS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Run E2E tests (full lab)
+        run: |
+          # Start lab in background
+          docker run -d --privileged --network host \
+            --name ipsec-lab-test \
+            -v $(pwd)/wireshark_keys:/wireshark_keys \
+            ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+          
+          # Wait for lab to start
+          sleep 30
+          
+          # Run E2E tests
+          bats tests/ipsec-lab.bats --filter "strongSwan charon starts|IKEv2 SA is ESTABLISHED|CHILD_SA is INSTALLED|ns-east can ping|ESP traffic flows|esp_sa|capture.pcap"
+          
+          # Cleanup
+          docker rm -f ipsec-lab-test || true
+        timeout-minutes: 10
+
+  # =============================================================================
+  # Trivy scan (built image)
+  # =============================================================================
+  trivy:
+    name: Trivy Image Scan
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+
+      - name: Trivy vulnerability scanner (image)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+  # =============================================================================
+  # Push to Docker Hub (main branch only)
+  # =============================================================================
+  push:
+    name: Push to Docker Hub
+    runs-on: ubuntu-latest
+    needs: [e2e, trivy]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+            ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ env.DOCKER_IMAGE }}
+          short-description: 'IPsec Lab - IKEv2/ESP with strongSwan'

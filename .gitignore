@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+*.out
+
+# Docker
+# .dockerignore is tracked
+
+# Lab artifacts (generated at runtime)
+wireshark_keys/*.pcap
+wireshark_keys/*.pcapng
+wireshark_keys/esp_sa*
+wireshark_keys/ikev2_*
+wireshark_keys/capture.*
+
+# Evidence (generated)
+evidence/
+
+# StrongSwan source
+strongswan-*.tar.gz
+strongswan-*/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+._*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.log
+logs/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Test artifacts
+*.cover
+coverage/
+htmlcov/
+.pytest_cache/
+coverage.xml
+
+# BATS
+tests/*.bats.bak

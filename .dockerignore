@@ -1,0 +1,39 @@
+# Version control
+.git
+.gitignore
+.github
+
+# Documentation
+README.md
+LICENSE
+*.md
+
+# Tests
+tests/
+.bats*
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Lab artifacts
+evidence/
+wireshark_keys/*.pcap
+wireshark_keys/esp_sa*
+
+# Build
+Makefile
+docker-compose.yml
+docker-compose*.yml
+
+# Scripts (not needed in image)
+scripts/evidence.sh
+scripts/run-lab.sh
