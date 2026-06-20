@@ -130,7 +130,7 @@ log "Generating Wireshark ESP SA keys..."
 generate_esp_sa() {
     local ns=$1
     local outfile=$2
-    > "$outfile"
+    : > "$outfile"
 
     ip netns exec "$ns" ip xfrm state | awk '
     /^src .* dst / { src=$2; dst=$4 }
