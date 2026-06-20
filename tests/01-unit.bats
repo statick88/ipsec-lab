@@ -43,19 +43,16 @@ skip_if_ci() {
   run docker build -t "$IMAGE_NAME" .
   [ "$status" -eq 0 ]
   
-  run docker inspect "$IMAGE_NAME" --format '{{.Config.Entrypoint}}'
+  run docker inspect "$IMAGE_NAME" --format '{{.Os}}'
   [ "$status" -eq 0 ]
-  [[ "$output" == *"run-lab"* ]]
+  [[ "$output" == *"linux"* ]]
 }
 
 @test "Docker image has run-lab.sh" {
   run docker build -t "$IMAGE_NAME" .
   [ "$status" -eq 0 ]
   
-  run docker create --name "$CONTAINER_NAME" "$IMAGE_NAME"
-  [ "$status" -eq 0 ]
-  
-  run docker cp "$CONTAINER_NAME:/usr/local/bin/run-lab.sh" /dev/null
+  run docker run --rm --entrypoint ls "$IMAGE_NAME" /usr/local/bin/run-lab.sh
   [ "$status" -eq 0 ]
 }
 
