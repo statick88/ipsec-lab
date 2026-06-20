@@ -34,6 +34,5 @@ Makefile
 docker-compose.yml
 docker-compose*.yml
 
-# Scripts (not needed in image)
+# Scripts (needed for lab)
 scripts/evidence.sh
-scripts/run-lab.sh
